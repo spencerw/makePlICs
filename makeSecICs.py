@@ -8,13 +8,11 @@ from astropy.constants import G
 simT = u.year/(2*np.pi)
 simV = u.AU / simT
 
-import sys
-sys.path.insert(0, os.path.expanduser('~') + '/OrbitTools/')
-import OrbitTools
+import KeplerOrbit as ko
 
 # From Wyatt 1999
 def e_forced(a):
-    return OrbitTools.lap(2, 3/2, a/a_jup)/OrbitTools.lap(1, 3/2, a/a_jup)*ecc_jup
+    return ko.lap(2, 3/2, a/a_jup)/ko.lap(1, 3/2, a/a_jup)*ecc_jup
 
 # From Hayashi 1981
 def rho_gas(a):
@@ -103,7 +101,11 @@ M_jup = params['M_pert']
 mass_jup = (params['mass_pert']*u.M_jup).to(u.M_sun).value
 eps_jup = (params['r_pert']*2*u.R_jup).to(u.AU).value
 
-pos_jup, vel_jup = OrbitTools.kep2cart(a_jup, ecc_jup, inc_jup, Omega_jup, omega_jup, M_jup, mass_jup, m_central)
+pj_x, pj_y, pj_z, vj_x, vj_y, vj_z = ko.kep2cart(a_jup, ecc_jup, inc_jup, \
+                          Omega_jup, omega_jup, M_jup, mass_jup, m_central)
+
+pos_jup = pj_x, pj_y, pj_z
+vel_jup = vj_z, vj_y, vj_z
 
 masses[1] = mass_jup
 positions[1] = pos_jup
@@ -138,10 +140,10 @@ omega_vals = omega_vals%(2*np.pi)
 M_vals = np.random.rand(n_particles)*2*np.pi
 
 for idx in range(n_particles):
-    pos, vel = OrbitTools.kep2cart(a_vals[idx], ecc_vals[idx], inc_vals[idx],\
+    p_x, p_y, p_z, v_x, v_y, v_z = ko.kep2cart(a_vals[idx], ecc_vals[idx], inc_vals[idx],\
                                    Omega_vals[idx], omega_vals[idx], M_vals[idx], masses[idx], m_central)
-    positions[idx+2] = pos
-    velocities[idx+2] = vel
+    positions[idx+2] = p_x, p_y, p_z
+    velocities[idx+2] = v_x, v_y, v_z
 
 masses[0] = m_central
 eps[0] = 1e-10
