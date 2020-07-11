@@ -12,11 +12,13 @@ m_disk     = 2.196         # Mass of disk, M_earth
 alpha_disk = -1.5          # Power law slope of surface density profile
 m_pl       = 2.809921e24   # Planetesimal mass, grams
 rho_pl     = 2.0           # Planetesimal bulk density, g/cc
+f_pl       = 1.0           # Inflation factor for collision cross section
 
 #####################################
 # Properties of the perturbing planet
 #####################################
 
+add_planet = 1             # Include a perturbing planet? (1 = yes)
 a_pert     = 5.20256097979 # Semimajor axis of perturber, AU
 e_pert     = 0.0           # Eccentricity of perturber
 i_pert     = 0.0           # Inclinaion of perturber, radians

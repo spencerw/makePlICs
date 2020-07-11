@@ -1,6 +1,7 @@
 # makeSecICs
-Tool for generating initial conditions for a planetesimal disk secularly perturbed by a giant planet in TIPSY format
+Tool for generating initial conditions for a planetesimal disk TIPSY format
+Allows for the option to include effects of secular forcing by a planet
 
-Requires pynbody, along with tipsy_tools and OrbitTools to be installed in your home directory
+Requires pynbody, along with tipsy_tools and KeplerOrbit to be installed in your home directory
 
 Run with 'python makeSecICs.py params.par'

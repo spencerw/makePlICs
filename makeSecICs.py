@@ -48,9 +48,11 @@ else:
     seed = int(np.random.rand()*sys.maxsize)
 
 filename = params['ic_file']
+add_planet = int(params['add_planet'])
+start_idx = 1 + add_planet
 n_particles = int((params['m_disk']*u.M_earth).to(u.g).value/params['m_pl'])
 print('Build a disk with ' + str(n_particles) + ' planetesimals')
-ntotal = n_particles + 2
+ntotal = n_particles + 1 + add_planet
 ndim = 3
 time = 0
 
@@ -83,6 +85,7 @@ for idx in range(n_particles):
 
 m_central = params['m_cent']
 
+f_pl = params['f_pl']
 rho_p = params['rho_pl']
 m_pl = params['m_pl']
 r_pl = (3*m_pl/(4*np.pi*rho_p))**(1/3)
@@ -92,28 +95,29 @@ m_pl = (m_pl*u.g).to(u.M_sun).value
 r_pl = (r_pl*u.cm).to(u.AU).value
 inc_std = ecc_std/2
 
-a_jup = params['a_pert']
-ecc_jup = params['e_pert']
-inc_jup = params['i_pert']
-omega_jup = params['omega_pert']
-Omega_jup = params['Omega_pert']
-M_jup = params['M_pert']
-mass_jup = (params['mass_pert']*u.M_jup).to(u.M_sun).value
-eps_jup = (params['r_pert']*2*u.R_jup).to(u.AU).value
+if add_planet:
+    a_jup = params['a_pert']
+    ecc_jup = params['e_pert']
+    inc_jup = params['i_pert']
+    omega_jup = params['omega_pert']
+    Omega_jup = params['Omega_pert']
+    M_jup = params['M_pert']
+    mass_jup = (params['mass_pert']*u.M_jup).to(u.M_sun).value
+    eps_jup = (params['r_pert']*2*u.R_jup).to(u.AU).value
 
-pj_x, pj_y, pj_z, vj_x, vj_y, vj_z = ko.kep2cart(a_jup, ecc_jup, inc_jup, \
-                          Omega_jup, omega_jup, M_jup, mass_jup, m_central)
+    pj_x, pj_y, pj_z, vj_x, vj_y, vj_z = ko.kep2cart(a_jup, ecc_jup, inc_jup, \
+                              Omega_jup, omega_jup, M_jup, mass_jup, m_central)
 
-pos_jup = pj_x, pj_y, pj_z
-vel_jup = vj_z, vj_y, vj_z
+    pos_jup = pj_x, pj_y, pj_z
+    vel_jup = vj_z, vj_y, vj_z
 
-masses[1] = mass_jup
-positions[1] = pos_jup
-velocities[1] = vel_jup
-eps[1] = eps_jup
+    masses[1] = mass_jup
+    positions[1] = pos_jup
+    velocities[1] = vel_jup
+    eps[1] = eps_jup
 
-masses[2:] = np.ones(n_particles)*m_pl
-eps[2:] = np.ones(n_particles)*r_pl/2
+masses[start_idx:] = np.ones(n_particles)*m_pl
+eps[start_idx:] = np.ones(n_particles)*r_pl/2*f_pl
 
 h_vals = np.empty(n_particles)
 k_vals = np.empty(n_particles)
@@ -126,8 +130,9 @@ for idx in range(n_particles):
     p_vals[idx] = np.random.normal(0, inc_std[idx])
     q_vals[idx] = np.random.normal(0, inc_std[idx])
 
-for idx in range(n_particles):
-    h_vals[idx] += e_forced(a_vals[idx])
+if add_planet:
+    for idx in range(n_particles):
+        h_vals[idx] += e_forced(a_vals[idx])
 
 inc_vals = np.sqrt(p_vals**2 + q_vals**2)
 Omega_vals = np.arctan2(q_vals, p_vals)
@@ -142,8 +147,8 @@ M_vals = np.random.rand(n_particles)*2*np.pi
 for idx in range(n_particles):
     p_x, p_y, p_z, v_x, v_y, v_z = ko.kep2cart(a_vals[idx], ecc_vals[idx], inc_vals[idx],\
                                    Omega_vals[idx], omega_vals[idx], M_vals[idx], masses[idx], m_central)
-    positions[idx+2] = p_x, p_y, p_z
-    velocities[idx+2] = v_x, v_y, v_z
+    positions[idx+start_idx] = p_x, p_y, p_z
+    velocities[idx+start_idx] = v_x, v_y, v_z
 
 masses[0] = m_central
 eps[0] = 1e-10
