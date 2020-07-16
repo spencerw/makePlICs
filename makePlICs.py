@@ -49,10 +49,11 @@ else:
 
 filename = params['ic_file']
 add_planet = int(params['add_planet'])
-start_idx = 1 + add_planet
+use_bary = int(params['use_bary'])
+start_idx = use_bary + add_planet
 n_particles = int((params['m_disk']*u.M_earth).to(u.g).value/params['m_pl'])
 print('Build a disk with ' + str(n_particles) + ' planetesimals')
-ntotal = n_particles + 1 + add_planet
+ntotal = n_particles + use_bary + add_planet
 ndim = 3
 time = 0
 
@@ -150,28 +151,29 @@ for idx in range(n_particles):
     positions[idx+start_idx] = p_x, p_y, p_z
     velocities[idx+start_idx] = v_x, v_y, v_z
 
-masses[0] = m_central
-eps[0] = 1e-10
+if use_bary:
+    masses[0] = m_central
+    eps[0] = 1e-10
 
-positions[0] = 0, 0, 0
-velocities[0] = 0, 0, 0
+    positions[0] = 0, 0, 0
+    velocities[0] = 0, 0, 0
 
-m_tot = np.sum(masses)
-r_com_x = np.sum(positions[:,0][1:]*masses[1:])/m_tot
-r_com_y = np.sum(positions[:,1][1:]*masses[1:])/m_tot
-r_com_z = np.sum(positions[:,2][1:]*masses[1:])/m_tot
+    m_tot = np.sum(masses)
+    r_com_x = np.sum(positions[:,0][1:]*masses[1:])/m_tot
+    r_com_y = np.sum(positions[:,1][1:]*masses[1:])/m_tot
+    r_com_z = np.sum(positions[:,2][1:]*masses[1:])/m_tot
 
-v_com_x = np.sum(velocities[:,0][1:]*masses[1:])/m_tot
-v_com_y = np.sum(velocities[:,1][1:]*masses[1:])/m_tot
-v_com_z = np.sum(velocities[:,2][1:]*masses[1:])/m_tot
+    v_com_x = np.sum(velocities[:,0][1:]*masses[1:])/m_tot
+    v_com_y = np.sum(velocities[:,1][1:]*masses[1:])/m_tot
+    v_com_z = np.sum(velocities[:,2][1:]*masses[1:])/m_tot
 
-positions[:,0] -= r_com_x
-positions[:,1] -= r_com_y
-positions[:,2] -= r_com_z
+    positions[:,0] -= r_com_x
+    positions[:,1] -= r_com_y
+    positions[:,2] -= r_com_z
 
-velocities[:,0] -= v_com_x
-velocities[:,1] -= v_com_y
-velocities[:,2] -= v_com_z
+    velocities[:,0] -= v_com_x
+    velocities[:,1] -= v_com_y
+    velocities[:,2] -= v_com_z
 
 # Gravitational potential field, not used
 pot = np.zeros(ntotal)

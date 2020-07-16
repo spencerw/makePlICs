@@ -1,5 +1,6 @@
 ic_file    = 'example.ic'  # Name for IC file
 m_cent     = 1             # Mass of central star, M_sun
+use_bary   = 0             # Use barycentric coordinates (include a star particle)
 #seed       = 50           # Random number seed, uncommment if you want to set this manually
 
 #####################################
