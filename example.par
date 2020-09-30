@@ -4,6 +4,17 @@ use_bary   = 0             # Use barycentric coordinates (include a star particl
 #seed       = 50           # Random number seed, uncommment if you want to set this manually
 
 #####################################
+# Properties of the gas disk
+#####################################
+
+sig0_gas  = 1700          # Surface density of gas at 1 AU (g cm^-2)
+P_gas     = -1.5          # Power law slope of gas surface density profile
+Q_gas     = -0.5          # Power law slope of gas temperature profile
+T0_gas    = 280           # Gas temperature at 1 AU (K)
+mu_gas    = 2.34          # Mean molecular weight of gas
+gas_const = -1            # If > 0, use constant value for gas density (g cm^-3)
+
+#####################################
 # Properties of the planetesimal disk
 #####################################
 

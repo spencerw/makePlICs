@@ -9,19 +9,7 @@ simT = u.year/(2*np.pi)
 simV = u.AU / simT
 
 import KeplerOrbit as ko
-
-# From Wyatt 1999
-def e_forced(a):
-    return ko.lap(2, 3/2, a/a_jup)/ko.lap(1, 3/2, a/a_jup)*ecc_jup
-
-# From Hayashi 1981
-def rho_gas(a):
-    return 2e-9*(a/1)**(-11/4)
-
-# Equation 12 from kokubo + ida 2002
-def e_eq(m, rho_p, b, C_D, a):
-    return 5.6*(m/1e23)**(1/15)*(rho_p/2)**(2/15)*(b/10)**(-1/5)*\
-           (C_D/1)**(-1/5)*(rho_gas(a)/2e-9)**(-1/5)*(a/1)**(-1/5)
+import gasModel
 
 if len(sys.argv) != 2:
     print('Error: Provide parameter file as command line argument')
@@ -85,6 +73,29 @@ for idx in range(n_particles):
     a_vals[idx] = (1-cum_p(A, uniform_x[idx], xmin))*disk_width + disk_inner_edge
 
 m_central = params['m_cent']
+sig0_gas = params['sig0_gas']
+P_gas = params['P_gas']
+Q_gas = params['Q_gas']
+T0_gas = params['T0_gas']
+mu_gas = params['mu_gas']
+gas_const = params['gas_const']
+
+# From Wyatt 1999
+def e_forced(a):
+    return ko.lap(2, 3/2, a/a_jup)/ko.lap(1, 3/2, a/a_jup)*ecc_jup
+
+def rho_gas(a):
+    r = (a*u.AU).to(u.cm).value
+    m_cen = (m_central*u.M_sun).to(u.g).value
+    if gas_const < 0:
+        return gasModel.rho_gas(r, m_cen, sig0_gas, P_gas, Q_gas, T0_gas, mu_gas)
+    else:
+        return gas_const
+
+# Equation 12 from kokubo + ida 2002
+def e_eq(m, rho_p, b, C_D, a):
+    return 5.6*(m/1e23)**(1/15)*(rho_p/2)**(2/15)*(b/10)**(-1/5)*\
+           (C_D/1)**(-1/5)*(rho_gas(a)/2e-9)**(-1/5)*(a/1)**(-1/5)
 
 f_pl = params['f_pl']
 rho_p = params['rho_pl']
