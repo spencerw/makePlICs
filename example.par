@@ -7,6 +7,7 @@ use_bary   = 0             # Use barycentric coordinates (include a star particl
 # Properties of the gas disk
 #####################################
 
+gas_profile = 1
 sig0_gas  = 1700          # Surface density of gas at 1 AU (g cm^-2)
 P_gas     = 1.5           # Power law slope of gas surface density profile
 Q_gas     = 0.5           # Power law slope of gas temperature profile
@@ -18,7 +19,7 @@ gas_const = -1            # If > 0, use constant value for gas density (g cm^-3)
 # Properties of the planetesimal disk
 #####################################
 
-a_in       = 2.2           # Disk inner edge, AU
+a_in       = 0.2           # Disk inner edge, AU
 a_out      = 3.8           # Disk outer edge, AU
 m_disk     = 2.196         # Mass of disk, M_earth
 alpha_disk = -1.5          # Power law slope of surface density profile
@@ -32,7 +33,7 @@ f_pl       = 1.0           # Inflation factor for collision cross section
 
 add_planet = 1             # Include a perturbing planet? (1 = yes)
 a_pert     = 5.20256097979 # Semimajor axis of perturber, AU
-e_pert     = 0.0           # Eccentricity of perturber
+e_pert     = 0.048           # Eccentricity of perturber
 i_pert     = 0.0           # Inclinaion of perturber, radians
 omega_pert = 0.0           # Long. of peri. of perturber, radians
 Omega_pert = 0.0           # Long. of asc. node of perturber, radians

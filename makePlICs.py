@@ -4,11 +4,32 @@ import os
 import sys
 
 from astropy import units as u
-from astropy.constants import G
+from astropy.constants import G, k_B, m_p
 simT = u.year/(2*np.pi)
 simV = u.AU / simT
 
 import KeplerOrbit as ko
+
+# All values in CGS
+C_D = 1
+def Rho_gas(r, m_cen, sigma0, P, Q, T0, mu, z=0):
+    r_AU = (r*u.cm).to(u.AU).value
+    sigmaGas = sigma0*r_AU**(-P)
+    temp = T0*r_AU**(-Q)
+    cGas = np.sqrt(k_B.cgs.value*temp/(mu*m_p.cgs.value))
+    omega = np.sqrt(G.cgs.value*m_cen/r**3)
+    hGas = cGas/omega
+    return sigmaGas/(np.sqrt(2*np.pi)*hGas)*np.exp(-(z**2)/(2*hGas**2))
+
+def Omega(m_star, r):
+    return np.sqrt(G.cgs*m_star/r**3)
+
+# Eccentricity at which viscous stirring balances stokes gas drag
+def Ecc_eq(m_pl, s_pl, rho_gas, omega, sigma, r, m_star):
+    v_k = np.sqrt(G.cgs*m_star/r)
+    A = 2*m_pl/(C_D*np.pi*s_pl**2*rho_gas)
+    B = 1/40*(omega**2*r**3/(2*G.cgs*m_pl))**2*4*m_pl/(sigma*r**2*omega)
+    return (A/B*1/v_k*np.sqrt(2/3))**(1/5)
 
 if len(sys.argv) != 2:
     print('Error: Provide parameter file as command line argument')
@@ -35,7 +56,17 @@ else:
     seed = int(np.random.rand()*sys.maxsize)
 
 filename = params['ic_file']
-add_planet = int(params['add_planet'])
+if 'add_planet' not in params:
+    add_planet = 0
+else:
+  add_planet = int(params['add_planet'])
+
+filename = params['ic_file']
+if 'gas_profile' not in params:
+    gas_profile = 0
+else:
+  gas_profile = int(params['gas_profile'])
+
 use_bary = int(params['use_bary'])
 start_idx = use_bary + add_planet
 n_particles = int((params['m_disk']*u.M_earth).to(u.g).value/params['m_pl'])
@@ -50,6 +81,9 @@ velocities = np.empty((ntotal, 3))
 eps = np.empty(ntotal)
 
 from scipy import integrate
+
+def Sigma(A, x):
+    return A*x**(params['alpha_disk'])
 
 def p(A, x):
     return A*x**(params['alpha_disk'] + 1)
@@ -72,20 +106,37 @@ for idx in range(n_particles):
     a_vals[idx] = (1-cum_p(A, uniform_x[idx], xmin))*disk_width + disk_inner_edge
 
 m_central = params['m_cent']
-
-# From Wyatt 1999
-def e_forced(a):
-    return ko.lap(2, 3/2, a/a_jup)/ko.lap(1, 3/2, a/a_jup)*ecc_jup
-
 f_pl = params['f_pl']
 rho_p = params['rho_pl']
 m_pl = params['m_pl']
 r_pl = (3*m_pl/(4*np.pi*rho_p))**(1/3)
-eh_eq = params['eh_eq']
-ecc_std = eh_eq*(m_pl/(3*(m_central*u.M_sun).to(u.g).value))**(1/3)
+
+if gas_profile:
+    sig0_gas = params['sig0_gas']
+    P_gas = params['P_gas']
+    Q_gas = params['Q_gas']
+    T0_gas = params['T0_gas']
+    mu_gas = params['mu_gas']
+    gas_const = params['gas_const']
+
+    rho_gas = Rho_gas((a_vals*u.AU).to(u.cm).value, (m_central*u.M_sun).to(u.g).value, sig0_gas, P_gas, Q_gas, T0_gas, mu_gas)
+    omega = Omega((m_central*u.M_sun).to(u.g).value, (a_vals*u.AU).to(u.cm).value)
+
+    xvals_cm = (xvals*u.AU).to(u.cm)
+    A_sigma = (params['m_disk']*u.M_earth).to(u.g).value/(2*np.pi*integrate.simps(p(1, xvals_cm), xvals_cm))*((1*u.cm).to(u.AU).value)**(-params['alpha_disk'])
+    ecc_std = Ecc_eq(m_pl, r_pl, rho_gas, omega, Sigma(A_sigma, a_vals), (a_vals*u.AU).to(u.cm).value, (m_central*u.M_sun).to(u.g).value)
+else:
+    eh_eq = params['eh_eq']
+    ecc_std_val = eh_eq*(m_pl/(3*(m_central*u.M_sun).to(u.g).value))**(1/3)
+    ecc_std = np.ones_like(a_vals)*ecc_std_val
+
+inc_std = ecc_std/2
 m_pl = (m_pl*u.g).to(u.M_sun).value
 r_pl = (r_pl*u.cm).to(u.AU).value
-inc_std = ecc_std/2
+
+# From Wyatt 1999
+def e_forced(a):
+    return ko.lap(2, 3/2, a/a_jup)/ko.lap(1, 3/2, a/a_jup)*ecc_jup
 
 if add_planet:
     a_jup = params['a_pert']
@@ -218,5 +269,11 @@ print('Hill radius at 1 AU = ' + str(rh_km) + ' km')
 
 v_esc = (np.sqrt(G.cgs.value*m_pl_g/(r_pl*u.AU).to(u.cm).value)*u.cm/u.s).to(u.km/u.s).value
 print('Planetesimal surface escape velocity = ' + str(v_esc) + ' km/s')
+
+print(filename)
+pl0 = pb.load(filename.replace("'", ""))
+p0 = pb.analysis.profile.Profile(pl0, min=disk_inner_edge, max=disk_outer_edge)
+surf_den = (p0['density'] * u.M_sun/u.AU**2).to(u.g/u.cm**2).value
+print('Average surface density: ' + str(np.mean(surf_den)) + ' g cm^-2')
 
 print('Random number seed = ' + str(seed))
