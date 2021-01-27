@@ -55,6 +55,10 @@ if 'seed' in params.keys():
 else:
     seed = int(np.random.rand()*sys.maxsize)
 
+fmt = params['fmt']
+if 'fmt' not in params:
+    fmt = 'tipsy'
+
 filename = params['ic_file']
 if 'add_planet' not in params:
     add_planet = 0
@@ -220,39 +224,52 @@ if use_bary:
 # Gravitational potential field, not used
 pot = np.zeros(ntotal)
 
-f = open('ic.txt', 'w')
+if fmt == 'tipsy':
+    f = open('ic.txt', 'w')
 
-f.write(str(ntotal) + ', 0, 0\n')
-f.write(str(ndim) + '\n')
-f.write(str(time) + '\n')
+    f.write(str(ntotal) + ', 0, 0\n')
+    f.write(str(ndim) + '\n')
+    f.write(str(time) + '\n')
 
-for idx in range(ntotal):
-    f.write(str(masses[idx]) + '\n')
+    for idx in range(ntotal):
+        f.write(str(masses[idx]) + '\n')
 
-for idx in range(ntotal):
-    f.write(str(positions[:,0][idx]) + '\n')
-for idx in range(ntotal):
-    f.write(str(positions[:,1][idx]) + '\n')
-for idx in range(ntotal):
-    f.write(str(positions[:,2][idx]) + '\n')
+    for idx in range(ntotal):
+        f.write(str(positions[:,0][idx]) + '\n')
+    for idx in range(ntotal):
+        f.write(str(positions[:,1][idx]) + '\n')
+    for idx in range(ntotal):
+        f.write(str(positions[:,2][idx]) + '\n')
     
-for idx in range(ntotal):
-    f.write(str(velocities[:,0][idx]) + '\n')
-for idx in range(ntotal):
-    f.write(str(velocities[:,1][idx]) + '\n')
-for idx in range(ntotal):
-    f.write(str(velocities[:,2][idx]) + '\n')
+    for idx in range(ntotal):
+        f.write(str(velocities[:,0][idx]) + '\n')
+    for idx in range(ntotal):
+        f.write(str(velocities[:,1][idx]) + '\n')
+    for idx in range(ntotal):
+        f.write(str(velocities[:,2][idx]) + '\n')
     
-for idx in range(ntotal):
-    f.write(str(eps[idx]) + '\n')
+    for idx in range(ntotal):
+        f.write(str(eps[idx]) + '\n')
     
-for idx in range(ntotal):
-    f.write(str(pot[idx]) + '\n')
+    for idx in range(ntotal):
+        f.write(str(pot[idx]) + '\n')
 
-f.close()
+    f.close()
 
-os.system(os.path.expanduser('~') + "/tipsy_tools/ascii2bin < ic.txt > " + filename)
-os.system("rm ic.txt")
+    os.system(os.path.expanduser('~') + "/tipsy_tools/ascii2bin < ic.txt > " + filename)
+    os.system("rm ic.txt")
+
+elif fmt == 'genga':
+    f = open(filename, 'w')
+
+    for idx in range(ntotal):
+        line = str(positions[:,0][idx]) + ' ' + str(positions[:,1][idx]) + ' ' + str(positions[:,2][idx]) + ' ' + \
+               str(masses[idx]) + ' ' + \
+               str(velocities[:,0][idx]) + ' ' +  str(velocities[:,1][idx]) + ' ' +  str(velocities[:,2][idx]) + ' ' + \
+               str(eps[idx]*2)
+        f.write(line + '\n')
+
+    f.close()
 
 # Print output parameters
 m_pl_g = (m_pl*u.M_sun).to(u.g).value
@@ -271,9 +288,10 @@ v_esc = (np.sqrt(G.cgs.value*m_pl_g/(r_pl*u.AU).to(u.cm).value)*u.cm/u.s).to(u.k
 print('Planetesimal surface escape velocity = ' + str(v_esc) + ' km/s')
 
 print(filename)
-pl0 = pb.load(filename.replace("'", ""))
-p0 = pb.analysis.profile.Profile(pl0, min=disk_inner_edge, max=disk_outer_edge)
-surf_den = (p0['density'] * u.M_sun/u.AU**2).to(u.g/u.cm**2).value
-print('Average surface density: ' + str(np.mean(surf_den)) + ' g cm^-2')
+if fmt == 'tipsy':
+    pl0 = pb.load(filename.replace("'", ""))
+    p0 = pb.analysis.profile.Profile(pl0, min=disk_inner_edge, max=disk_outer_edge)
+    surf_den = (p0['density'] * u.M_sun/u.AU**2).to(u.g/u.cm**2).value
+    print('Average surface density: ' + str(np.mean(surf_den)) + ' g cm^-2')
 
 print('Random number seed = ' + str(seed))
