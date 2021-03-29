@@ -19,7 +19,7 @@ gas_const = -1            # If > 0, use constant value for gas density (g cm^-3)
 # Properties of the planetesimal disk
 #####################################
 
-a_in       = 0.2           # Disk inner edge, AU
+a_in       = 2.2           # Disk inner edge, AU
 a_out      = 3.8           # Disk outer edge, AU
 m_disk     = 2.196         # Mass of disk, M_earth
 alpha_disk = -1.5          # Power law slope of surface density profile
