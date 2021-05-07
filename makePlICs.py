@@ -55,9 +55,11 @@ if 'seed' in params.keys():
 else:
     seed = int(np.random.rand()*sys.maxsize)
 
-fmt = params['fmt']
 if 'fmt' not in params:
     fmt = 'tipsy'
+else:
+    fmt = params['fmt']
+    fmt = fmt.replace("'", "") 
 
 filename = params['ic_file']
 if 'add_planet' not in params:
@@ -260,7 +262,7 @@ if fmt == 'tipsy':
     os.system("rm ic.txt")
 
 elif fmt == 'genga':
-    f = open(filename, 'w')
+    f = open(filename.replace("'", ""), 'w')
 
     for idx in range(ntotal):
         line = str(positions[:,0][idx]) + ' ' + str(positions[:,1][idx]) + ' ' + str(positions[:,2][idx]) + ' ' + \
