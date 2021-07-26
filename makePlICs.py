@@ -67,6 +67,11 @@ if 'add_planet' not in params:
 else:
   add_planet = int(params['add_planet'])
 
+if 'sec_force' not in params:
+    sec_force = 1
+else:
+    sec_force = int(params['sec_force'])
+
 filename = params['ic_file']
 if 'gas_profile' not in params:
     gas_profile = 0
@@ -179,7 +184,7 @@ for idx in range(n_particles):
     p_vals[idx] = np.random.normal(0, inc_std[idx])
     q_vals[idx] = np.random.normal(0, inc_std[idx])
 
-if add_planet:
+if add_planet and sec_force:
     for idx in range(n_particles):
         h_vals[idx] += e_forced(a_vals[idx])
 
