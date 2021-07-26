@@ -165,10 +165,11 @@ if add_planet:
     pos_jup = pj_x, pj_y, pj_z
     vel_jup = vj_z, vj_y, vj_z
 
-    masses[1] = mass_jup
-    positions[1] = pos_jup
-    velocities[1] = vel_jup
-    eps[1] = eps_jup
+    pl_idx = use_bary
+    masses[pl_idx] = mass_jup
+    positions[pl_idx] = pos_jup
+    velocities[pl_idx] = vel_jup
+    eps[pl_idx] = eps_jup
 
 masses[start_idx:] = np.ones(n_particles)*m_pl
 eps[start_idx:] = np.ones(n_particles)*r_pl/2*f_pl
