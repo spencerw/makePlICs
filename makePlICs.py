@@ -10,6 +10,17 @@ simV = u.AU / simT
 
 import KeplerOrbit as ko
 
+# Headwind velocity of gas in pressure-supported disk
+# r and m_central in cm and M_sun, cs in cm/s
+# q is the power law index of the pressure profile, which should be same as
+# temperature profile for an ideal gas
+def V_gas(m_cen, r, Q, T0, mu):
+    r_AU = (r*u.cm).to(u.AU).value
+    temp = T0*r_AU**(-Q)
+    cs = np.sqrt(k_B.cgs.value*temp/(mu*m_p.cgs.value))
+    v_k = np.sqrt(G.cgs.value*m_cen/r)
+    return v_k*(1 - np.sqrt(1 - (Q*cs**2/v_k**2)))
+
 # All values in CGS
 C_D = 1
 def Rho_gas(r, m_cen, sigma0, P, Q, T0, mu, z=0):
@@ -22,14 +33,13 @@ def Rho_gas(r, m_cen, sigma0, P, Q, T0, mu, z=0):
     return sigmaGas/(np.sqrt(2*np.pi)*hGas)*np.exp(-(z**2)/(2*hGas**2))
 
 def Omega(m_star, r):
-    return np.sqrt(G.cgs*m_star/r**3)
+    return np.sqrt(G.cgs.value*m_star/r**3)
 
 # Eccentricity at which viscous stirring balances stokes gas drag
-def Ecc_eq(m_pl, s_pl, rho_gas, omega, sigma, r, m_star):
-    v_k = np.sqrt(G.cgs*m_star/r)
-    A = 2*m_pl/(C_D*np.pi*s_pl**2*rho_gas)
-    B = 1/40*(omega**2*r**3/(2*G.cgs*m_pl))**2*4*m_pl/(sigma*r**2*omega)
-    return (A/B*1/v_k*np.sqrt(2/3))**(1/5)
+def Ecc_eq(m_pl, s_pl, rho_gas, v_gas, omega, sigma, r, m_star):
+    A = 2*m_pl/(C_D*np.pi*s_pl**2*rho_gas*v_gas)
+    B = 1/40*(omega**2*r**3/(2*G.cgs.value*m_pl))**2*4*m_pl/(sigma*r**2*omega)
+    return (A/B)**(1/4)
 
 if len(sys.argv) != 2:
     print('Error: Provide parameter file as command line argument')
@@ -131,11 +141,12 @@ if gas_profile:
     gas_const = params['gas_const']
 
     rho_gas = Rho_gas((a_vals*u.AU).to(u.cm).value, (m_central*u.M_sun).to(u.g).value, sig0_gas, P_gas, Q_gas, T0_gas, mu_gas)
+    v_gas = V_gas((m_central*u.M_sun).to(u.g).value, (a_vals*u.AU).to(u.cm).value, Q_gas, T0_gas, mu_gas)
     omega = Omega((m_central*u.M_sun).to(u.g).value, (a_vals*u.AU).to(u.cm).value)
 
     xvals_cm = (xvals*u.AU).to(u.cm)
     A_sigma = (params['m_disk']*u.M_earth).to(u.g).value/(2*np.pi*integrate.simps(p(1, xvals_cm), xvals_cm))*((1*u.cm).to(u.AU).value)**(-params['alpha_disk'])
-    ecc_std = Ecc_eq(m_pl, r_pl, rho_gas, omega, Sigma(A_sigma, a_vals), (a_vals*u.AU).to(u.cm).value, (m_central*u.M_sun).to(u.g).value)
+    ecc_std = Ecc_eq(m_pl, r_pl, rho_gas, v_gas, omega, Sigma(A_sigma, a_vals), (a_vals*u.AU).to(u.cm).value, (m_central*u.M_sun).to(u.g).value)
 else:
     eh_eq = params['eh_eq']
     ecc_std_val = eh_eq*(m_pl/(3*(m_central*u.M_sun).to(u.g).value))**(1/3)
