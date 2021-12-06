@@ -306,7 +306,6 @@ print('Hill radius at 1 AU = ' + str(rh_km) + ' km')
 v_esc = (np.sqrt(G.cgs.value*m_pl_g/(r_pl*u.AU).to(u.cm).value)*u.cm/u.s).to(u.km/u.s).value
 print('Planetesimal surface escape velocity = ' + str(v_esc) + ' km/s')
 
-print(filename)
 if fmt == 'tipsy':
     pl0 = pb.load(filename.replace("'", ""))
     p0 = pb.analysis.profile.Profile(pl0, min=disk_inner_edge, max=disk_outer_edge)
@@ -314,3 +313,6 @@ if fmt == 'tipsy':
     print('Average surface density: ' + str(np.mean(surf_den)) + ' g cm^-2')
 
 print('Random number seed = ' + str(seed))
+
+delta_t = np.sqrt(disk_inner_edge**3/m_central)*0.03/(2*np.pi)
+print('Recommended base timestep = ' + str(delta_t) + ' simulation units')
