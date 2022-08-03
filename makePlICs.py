@@ -1,3 +1,4 @@
+import scipy.interpolate as interpolate
 import numpy as np
 import pynbody as pb
 import os
@@ -101,8 +102,6 @@ positions = np.empty((ntotal, 3))
 velocities = np.empty((ntotal, 3))
 eps = np.empty(ntotal)
 
-from scipy import integrate
-
 def Sigma(A, x):
     return A*x**(params['alpha_disk'])
 
@@ -111,7 +110,7 @@ def p(A, x):
 
 def cum_p(A, x, xmin):
     x_vals = np.linspace(xmin, x)
-    return integrate.simps(p(A, x_vals), x_vals)
+    return np.trapz(p(A, x_vals), x_vals)
 
 disk_inner_edge = params['a_in']
 disk_outer_edge = params['a_out']
@@ -119,12 +118,10 @@ disk_width = disk_outer_edge - disk_inner_edge
 
 xmin, xmax = disk_inner_edge, disk_outer_edge
 xvals = np.linspace(xmin, xmax)
-A = 1/(integrate.simps(p(1, xvals), xvals))
+A = 1/(np.trapz(p(1, xvals), xvals))
 
-uniform_x = np.random.rand(n_particles)*disk_width + disk_inner_edge
-a_vals = np.empty(n_particles)
-for idx in range(n_particles):
-    a_vals[idx] = (1-cum_p(A, uniform_x[idx], xmin))*disk_width + disk_inner_edge
+inv_cdf = interpolate.interp1d(cum_p(A, np.linspace(xmin, xmax), xmin), np.linspace(xmin, xmax))
+a_vals = inv_cdf(np.random.rand(n_particles))
 
 m_central = params['m_cent']
 f_pl = params['f_pl']
@@ -145,8 +142,11 @@ if gas_profile:
     omega = Omega((m_central*u.M_sun).to(u.g).value, (a_vals*u.AU).to(u.cm).value)
 
     xvals_cm = (xvals*u.AU).to(u.cm)
-    A_sigma = (params['m_disk']*u.M_earth).to(u.g).value/(2*np.pi*integrate.simps(p(1, xvals_cm), xvals_cm))*((1*u.cm).to(u.AU).value)**(-params['alpha_disk'])
-    ecc_std = Ecc_eq(m_pl, r_pl, rho_gas, v_gas, omega, Sigma(A_sigma, a_vals), (a_vals*u.AU).to(u.cm).value, (m_central*u.M_sun).to(u.g).value)
+    ecc_std = Ecc_eq(m_pl, r_pl, rho_gas, v_gas, omega, Sigma(A, a_vals), (a_vals*u.AU).to(u.cm).value, (m_central*u.M_sun).to(u.g).value)
+    rh_fac = (m_pl/(3*0.08*1.989e33))**(1/3)
+    print(rh_fac)
+    ecc_h = ecc_std/rh_fac
+    print(ecc_h)
 else:
     eh_eq = params['eh_eq']
     ecc_std_val = eh_eq*(m_pl/(3*(m_central*u.M_sun).to(u.g).value))**(1/3)
@@ -315,4 +315,4 @@ if fmt == 'tipsy':
 print('Random number seed = ' + str(seed))
 
 delta_t = np.sqrt(disk_inner_edge**3/m_central)*0.03/(2*np.pi)
-print('Recommended base timestep = ' + str(delta_t) + ' simulation units')
+print('Recommended base timestep = ' + str(delta_t))
