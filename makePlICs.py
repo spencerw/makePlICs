@@ -11,6 +11,28 @@ simV = u.AU / simT
 
 import KeplerOrbit as ko
 
+# Print iterations progress
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
+
 # Headwind velocity of gas in pressure-supported disk
 # r and m_central in cm and M_sun, cs in cm/s
 # q is the power law index of the pressure profile, which should be same as
@@ -65,6 +87,11 @@ if 'seed' in params.keys():
     seed = int(params['seed'])
 else:
     seed = int(np.random.rand()*sys.maxsize)
+
+if 'check_overlap' not in params:
+    checkOverlap = 0
+else:
+    checkOverlap = int(params['check_overlap'])
 
 if 'fmt' not in params:
     fmt = 'tipsy'
@@ -190,29 +217,45 @@ k_vals = np.empty(n_particles)
 p_vals = np.empty(n_particles)
 q_vals = np.empty(n_particles)
 
+print("Drawing orbital elements for particles...")
+printProgressBar(0, n_particles, prefix = 'Progress:', suffix = 'Complete', length = 50)
 for idx in range(n_particles):
-    h_vals[idx] = np.random.normal(0, ecc_std[idx])
-    k_vals[idx] = np.random.normal(0, ecc_std[idx])
-    p_vals[idx] = np.random.normal(0, inc_std[idx])
-    q_vals[idx] = np.random.normal(0, inc_std[idx])
+    printProgressBar(idx + 1, n_particles, prefix = 'Progress:', suffix = 'Complete', length = 50)
+    if checkOverlap:
+        isOverlap = True
+    else:
+        isOverlap = False
 
-if add_planet and sec_force:
-    for idx in range(n_particles):
-        h_vals[idx] += e_forced(a_vals[idx])
+    while isOverlap:
+        h_vals[idx] = np.random.normal(0, ecc_std[idx])
+        k_vals[idx] = np.random.normal(0, ecc_std[idx])
+        p_vals[idx] = np.random.normal(0, inc_std[idx])
+        q_vals[idx] = np.random.normal(0, inc_std[idx])
+        if add_planet and sec_force:
+            h_vals[idx] += e_forced(a_vals[idx])
 
-inc_vals = np.sqrt(p_vals**2 + q_vals**2)
-Omega_vals = np.arctan2(q_vals, p_vals)
+        inc_val = np.sqrt(p_vals[idx]**2 + q_vals[idx]**2)
+        Omega_val = np.arctan2(q_vals[idx], p_vals[idx])
 
-ecc_vals = np.sqrt(h_vals**2 + k_vals**2)
-varpi_vals = np.arctan2(k_vals, h_vals)
-omega_vals = varpi_vals - Omega_vals
-omega_vals = omega_vals%(2*np.pi)
+        ecc_val = np.sqrt(h_vals[idx]**2 + k_vals[idx]**2)
+        varpi_val = np.arctan2(k_vals[idx], h_vals[idx])
+        omega_val = varpi_val - Omega_val
+        omega_val = omega_val%(2*np.pi)
+        M_val = np.random.rand()*2*np.pi
 
-M_vals = np.random.rand(n_particles)*2*np.pi
+        p_x, p_y, p_z, v_x, v_y, v_z = ko.kep2cart(a_vals[idx], ecc_val, inc_val,\
+                                       Omega_val, omega_val, M_val, masses[idx], m_central)
 
-for idx in range(n_particles):
-    p_x, p_y, p_z, v_x, v_y, v_z = ko.kep2cart(a_vals[idx], ecc_vals[idx], inc_vals[idx],\
-                                   Omega_vals[idx], omega_vals[idx], M_vals[idx], masses[idx], m_central)
+        # Make sure no overlap, otherwise redraw
+        for idx1 in range(0, idx):
+            x, y, z = positions[idx1+start_idx]
+            dist = np.sqrt((x - p_x)**2 + (y - p_y)**2 + (z - p_z)**2)
+            if dist < 2*r_pl:
+                isOverlap = True
+                break
+        
+        isOverlap = False
+
     positions[idx+start_idx] = p_x, p_y, p_z
     velocities[idx+start_idx] = v_x, v_y, v_z
 
