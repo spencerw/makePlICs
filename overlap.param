@@ -1,0 +1,31 @@
+achInFile       = output.ic
+achOutName      = output
+iOutInterval    = 1000
+iLogInterval    = 1000
+iCheckInterval  = 1000
+bDoIOrderOutput = 1
+
+bDoDensity      = 0
+bDoDark         = 1
+bDoGravity      = 0
+bCollision      = 1
+iCollModel      = 4
+bDelEjected     = 1
+
+bCentralBody    = 1
+dCentMass       = 3e-6
+dCentRad        = 4.259e-6 # 0.1 earth radius
+
+bDoGasDrag      = 0
+
+dKpcUnit = 4.8481368e-09
+dMsolUnit = 1
+# Time unit = 1 year / 2*pi
+
+nSteps          = 1
+dDelta          = 7.658205651514731e-07
+bGravStep       = 1
+bKepStep        = 1
+bEpsAccStep     = 0
+bSkipP0         = 0 
+bCollStep       = 0
