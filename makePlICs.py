@@ -177,9 +177,7 @@ if gas_profile:
     xvals_cm = (xvals*u.AU).to(u.cm)
     ecc_std = Ecc_eq(m_pl, r_pl, rho_gas, v_gas, omega, Sigma(A, a_vals), (a_vals*u.AU).to(u.cm).value, (m_central*u.M_sun).to(u.g).value)
     rh_fac = (m_pl/(3*0.08*1.989e33))**(1/3)
-    print(rh_fac)
     ecc_h = ecc_std/rh_fac
-    print(ecc_h)
 else:
     eh_eq = params['eh_eq']
     ecc_std_val = eh_eq*(m_pl/(3*(m_central*u.M_sun).to(u.g).value))**(1/3)
@@ -226,10 +224,15 @@ q_vals = np.empty(n_particles)
 def genPosVelForVec(iords, positions, velocities):
     print("Drawing orbital elements for " +str(len(iords))+  " particles...", flush=True)
 
-    h_vals = np.random.normal(0, ecc_std[iords], len(iords))
-    k_vals = np.random.normal(0, ecc_std[iords], len(iords))
-    p_vals = np.random.normal(0, inc_std[iords], len(iords))
-    q_vals = np.random.normal(0, inc_std[iords], len(iords))
+    iordsminus = np.copy(iords)
+    if add_planet:
+        iordsminus = np.subtract(iordsminus, np.ones_like(iords))
+    if use_bary:
+        iordsminus = np.subtract(iordsminus, np.ones_like(iords))
+    h_vals = np.random.normal(0, ecc_std[iordsminus], len(iords))
+    k_vals = np.random.normal(0, ecc_std[iordsminus], len(iords))
+    p_vals = np.random.normal(0, inc_std[iordsminus], len(iords))
+    q_vals = np.random.normal(0, inc_std[iordsminus], len(iords))
 
     # Vectorize this?
     if add_planet and sec_force:
@@ -261,12 +264,18 @@ def genPosVelForVec(iords, positions, velocities):
 def genPosVelFor(iords, positions, velocities):
     print("Drawing orbital elements for " +str(len(iords))+  " particles...", flush=True)
 
+    iordsminus = np.copy(iords)
+    if add_planet:
+        iordsminus = np.subtract(iordsminus, np.ones_like(iords))
+    if use_bary:
+        iordsminus = np.subtract(iordsminus, np.ones_like(iords))
+
     #printProgressBar(0, n_particles, prefix = 'Progress:', suffix = 'Complete', length = 50)
-    for i in range(len(iords)):
+    for i in range(len(iordsminus)):
         if i%1000 == 0:
-            print(str(i) + ' of ' + str(len(iords)), flush=True)
+            print(str(i) + ' of ' + str(len(iordsminus)), flush=True)
         #printProgressBar(i + 1, n_particles, prefix = 'Progress:', suffix = 'Complete', length = 50)
-        iord = iords[i]
+        iord = iordsminus[i]
 
         h_val = np.random.normal(0, ecc_std[iord])
         k_val = np.random.normal(0, ecc_std[iord])
@@ -293,7 +302,10 @@ def genPosVelFor(iords, positions, velocities):
     return positions, velocities
 
 # First time through, generate positions and velocities for all particles
-positions, velocities = genPosVelForVec(np.arange(start_idx, n_particles+start_idx), positions, velocities)
+if sec_force:
+    positions, velocities = genPosVelFor(np.arange(start_idx, n_particles+start_idx), positions, velocities)
+else:
+    positions, velocities = genPosVelForVec(np.arange(start_idx, n_particles+start_idx), positions, velocities)
 
 # Warning: this is broken when doing overlap checks. Need to fix later!
 # Also, indices are probably incorrect when this is turned on
