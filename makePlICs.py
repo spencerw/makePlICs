@@ -381,7 +381,7 @@ if fmt == 'tipsy':
         num_over = 0
         if checkOverlap:
             os.system("rm overlap.log")
-            os.system(os.path.expanduser('~') + "/changa_uw_collision_overlap/ChaNGa overlap.param > output.changa")
+            os.system(os.path.expanduser('~') + "/changa_uw_collision/ChaNGa overlap.param > output.changa")
 
             df = pd.read_csv('overlap.log', delimiter=' ', names=['i1', 'i2'])
             print("Size of overlap log: " + str(len(df)))

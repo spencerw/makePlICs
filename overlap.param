@@ -11,6 +11,7 @@ bDoGravity      = 0
 bCollision      = 1
 iCollModel      = 4
 bDelEjected     = 1
+bLogOverlaps    = 1
 
 bCentralBody    = 1
 dCentMass       = 3e-6
